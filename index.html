@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATA SOUL | 数据分析师天赋测评</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #1a1a1a;
+            --bg: #f8f8f6;
+            --gold: #c5a059;
+            --error: #e63946;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--accent);
+            overflow-x: hidden;
+        }
+
+        .serif { font-family: 'Noto Serif SC', serif; }
+
+        /* 动画系统 */
+        .fade-in { animation: fadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .slide-up { animation: slideUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* 动态背景层 */
+        .home-bg {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(197, 160, 89, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 0, 0, 0.05) 0%, transparent 40%);
+            overflow: hidden;
+        }
+
+        .mesh-blob {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(197, 160, 89, 0.12) 0%, transparent 70%);
+            filter: blur(80px);
+            animation: moveBlob 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+        }
+
+        @keyframes moveBlob {
+            0% { transform: translate(-10%, -10%); }
+            100% { transform: translate(20%, 30%); }
+        }
+
+        .data-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+        }
+
+        /* 输入框样式 */
+        .name-input, .code-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.4s ease;
+            outline: none;
+        }
+        .name-input:focus, .code-input:focus {
+            border-bottom-color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        .btn-mag {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(5px);
+        }
+        .btn-mag:hover {
+            letter-spacing: 2px;
+            background-color: #000;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* 测评卡片与维度 */
+        .dimension-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .dimension-card:hover {
+            transform: translateY(-10px);
+            border-color: #000;
+        }
+
+        .chart-segment {
+            height: 6px;
+            flex: 1;
+            background: #eee;
+            transition: all 0.6s ease;
+        }
+        .chart-segment.active {
+            background: var(--gold);
+        }
+
+        .grain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <!-- 首页: 杂志封面 -->
+    <div id="home" class="min-h-screen flex flex-col justify-center items-center px-6 relative overflow-hidden">
+        <div class="home-bg">
+            <div class="data-grid"></div>
+            <div class="mesh-blob" style="top: -100px; left: -100px;"></div>
+        </div>
+
+        <div class="absolute top-10 left-10 text-xs tracking-[0.3em] font-light">VOLUME 2026 / ISSUE NO.01</div>
+        
+        <header class="text-center slide-up relative z-10">
+            <div class="inline-block px-3 py-1 border border-black/10 text-[10px] tracking-[0.5em] mb-6 opacity-60 uppercase">Career Archetype Quiz 2026</div>
+            <h1 class="text-[12vw] md:text-[8vw] serif leading-none mb-4 font-bold tracking-tighter">DATA<br>SOUL.</h1>
+            <p class="text-lg md:text-xl font-light tracking-widest uppercase mb-12">数据分析师：灵魂契合度测评</p>
+            
+            <div class="mb-12 flex flex-col items-center">
+                <label for="username" class="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-4">请输入您的称呼 / NAME</label>
+                <input type="text" id="username" class="name-input w-40 py-2 text-xl serif" placeholder="分析师" maxlength="12">
+            </div>
+
+            <button onclick="goToGate()" class="btn-mag px-12 py-4 border border-black text-sm uppercase tracking-widest">
+                开始探索之旅
+            </button>
+        </header>
+
+        <div class="absolute bottom-10 right-10 text-[10px] text-gray-400 font-mono">EST. 2026 / DATA-SOUL-SYSTEM</div>
+    </div>
+
+    <!-- 授权界面 (Gate) -->
+    <div id="gate" class="hidden min-h-screen flex flex-col justify-center items-center px-6 relative bg-white">
+        <div class="max-w-md w-full text-center slide-up">
+            <div class="text-[10px] uppercase tracking-[0.5em] mb-12 text-gray-400">Security / 授权验证</div>
+            <h2 class="text-3xl serif mb-8">请输入访问码</h2>
+            <p class="text-xs text-gray-400 mb-12 leading-relaxed">此工具仅供内部评估使用，请输入您的 15 位授权兑换码以同步数据灵魂。</p>
+            
+            <div class="relative mb-12" id="code-container">
+                <input type="password" id="redemption-code" class="code-input w-full py-4 text-center tracking-[0.5em] text-lg" placeholder="•••••••••••••••">
+                <div id="error-msg" class="absolute -bottom-8 left-0 w-full text-[10px] text-red-500 opacity-0 transition-opacity uppercase tracking-widest">访问码无效，请重新输入</div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <button onclick="verifyAccess()" class="btn-mag px-12 py-4 bg-black text-white text-xs uppercase tracking-widest">验证并启动</button>
+                <button onclick="location.reload()" class="text-[10px] uppercase tracking-widest text-gray-300 hover:text-black transition-colors">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 测试界面 -->
+    <div id="quiz-container" class="hidden min-h-screen flex items-center justify-center px-6 bg-[#fff]">
+        <div class="max-w-3xl w-full">
+            <div class="mb-20">
+                <div class="flex justify-between items-end mb-4">
+                    <span id="progress-text" class="text-[4rem] serif leading-none text-gray-100">01</span>
+                    <div class="text-right">
+                        <div id="quiz-user-name" class="text-xs font-bold uppercase tracking-widest mb-1">...</div>
+                        <span class="text-[10px] tracking-widest uppercase text-gray-400">Assessment Unit</span>
+                    </div>
+                </div>
+                <div class="w-full h-[1px] bg-gray-100">
+                    <div id="progress-bar" class="h-[1px] bg-black transition-all duration-500" style="width: 5%;"></div>
+                </div>
+            </div>
+            <div id="questions"></div>
+        </div>
+    </div>
+
+    <!-- 结果页面 -->
+    <div id="result" class="hidden py-24 px-6 md:px-20 bg-[#fbfbfb]">
+        <div class="max-w-6xl mx-auto">
+            <div class="border-b border-black pb-8 mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                    <h2 class="text-5xl serif mb-4"><span id="result-user-name" class="opacity-50">...</span> · <span id="animal-name" class="text-gold">...</span></h2>
+                    <p class="text-gray-500 uppercase tracking-widest text-sm">Personal Portrait Report 2026</p>
+                </div>
+                <div id="keywords" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-20 mb-24">
+                <div class="slide-up">
+                    <div class="aspect-[4/5] bg-white border border-gray-200 relative overflow-hidden flex items-center justify-center shadow-lg">
+                        <div id="animal-icon" class="text-[120px] z-10">...</div>
+                        <div class="absolute -bottom-10 -right-10 text-[120px] text-gray-50 serif font-bold select-none">2026</div>
+                    </div>
+                </div>
+                <div class="flex flex-col justify-center" id="ai-analysis-container">
+                    <!-- AI Analysis Result will be injected here -->
+                </div>
+            </div>
+
+            <div class="mb-24">
+                <h4 class="text-sm uppercase tracking-[0.4em] text-center mb-16 font-bold">深度能力图鉴 / Dimension Spectrum</h4>
+                <div id="dimensions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            </div>
+
+            <div class="text-center py-20 border-t border-gray-100 flex flex-col items-center gap-6">
+                <p class="serif italic text-2xl text-gray-400 mb-8">"数据不会说话，但它是你通往真相的阶梯。"</p>
+                <div class="flex gap-8">
+                    <button onclick="location.reload()" class="text-xs uppercase tracking-widest border-b border-black pb-1 hover:text-gold hover:border-gold transition-colors">重新测评</button>
+                    <button onclick="toggleContact()" class="text-xs uppercase tracking-widest border-b border-black pb-1 hover:text-gold hover:border-gold transition-colors">联系作者</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 联系我弹窗 -->
+    <div id="contact-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300" onclick="toggleContact()">
+        <div class="bg-white p-8 max-w-sm mx-auto transform scale-95 transition-transform duration-300" onclick="event.stopPropagation()">
+            <div class="text-center">
+                <h3 class="serif text-2xl mb-2">Connect With Me</h3>
+                <p class="text-xs text-gray-400 uppercase tracking-widest mb-6">Scan QR Code</p>
+                <div class="border border-gray-100 p-4 mb-6">
+                    <img src="./二维码.png" alt="WeChat QR Code" class="w-full h-auto">
+                </div>
+                <button onclick="toggleContact()" class="text-xs uppercase tracking-widest hover:text-gold transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CORRECT_CODE = "best";
+        
+        const questions = [
+            { q: "当你看到一张复杂的趋势图表时，你的第一反应是？", options: [{ t: "直觉图表想要传达的核心结论", s: { insight: 5, comm: 2 } }, { t: "立刻寻找坐标轴刻度和数据来源", s: { detail: 5, logic: 2 } }] },
+            { q: "在处理一大堆乱糟糟的数据前，你通常会？", options: [{ t: "先列出清洗逻辑和步骤清单", s: { logic: 5, tech: 2 } }, { t: "直接动手在Excel里试错寻找灵感", s: { resilience: 5, insight: 2 } }] },
+            { q: "对于学习一门新的编程语言（如Python/R），你的感受是？", options: [{ t: "那是探索未知的刺激工具", s: { tech: 5, resilience: 3 } }, { t: "虽然繁琐但为了结果必须掌握", s: { logic: 4, detail: 2 } }] },
+            { q: "当你的分析结论与上司的直觉相反时，你会？", options: [{ t: "用更严谨的数据图表和逻辑试图说服", s: { comm: 5, logic: 3 } }, { t: "先反思是不是自己的数据算错了", s: { detail: 5, resilience: 2 } }] },
+            { q: "你更享受哪种成就感？", options: [{ t: "代码跑通，模型预测精度极高", s: { tech: 5, logic: 3 } }, { t: "业务部门根据你的建议提升了转化", s: { insight: 5, comm: 3 } }] },
+            { q: "面对一个没有标准答案的开放性业务问题，你？", options: [{ t: "兴奋地拆解所有可能性", s: { logic: 5, insight: 4 } }, { t: "感到有些迷茫，希望先看历史数据", s: { detail: 4, resilience: 3 } }] },
+            { q: "如果要把数据结果讲给非技术人员听，你会？", options: [{ t: "尽量用比喻和通俗易懂的故事", s: { comm: 5, insight: 3 } }, { t: "坚持用精确的数据定义，防止误读", s: { detail: 5, logic: 2 } }] },
+            { q: "你对“自动化”的看法是？", options: [{ t: "极致的效率追求，讨厌重复造轮子", s: { tech: 5, logic: 4 } }, { t: "手动操作更能确保每一个细节无误", s: { detail: 5, resilience: 2 } }] },
+            { q: "当遇到无法解释的数据异常值时？", options: [{ t: "必须打破砂锅问到底找到根因", s: { resilience: 5, detail: 4 } }, { t: "如果占比小，可以考虑先剔除", s: { insight: 4, comm: 2 } }] },
+            { q: "你更偏向于？", options: [{ t: "发现隐藏在数字下的规律", s: { logic: 5, insight: 5 } }, { t: "确保输出的每一份报表绝对精准", s: { detail: 5, tech: 3 } }] },
+            { q: "玩策略类游戏（如象棋、狼人杀、文明）时？", options: [{ t: "你是那个计算后三步的人", s: { logic: 5, tech: 2 } }, { t: "你是观察对手心理的人", s: { insight: 5, comm: 3 } }] },
+            { q: "你如何看待PPT制作？", options: [{ t: "它是结论的分发渠道，非常重要", s: { comm: 5, insight: 2 } }, { t: "如果结论足够硬，排版不应占太多时间", s: { tech: 4, detail: 2 } }] },
+            { q: "面对几千行的Excel报错，你的情绪波动是？", options: [{ t: "冷静地像个外科医生", s: { resilience: 5, logic: 3 } }, { t: "会有一瞬间想砸电脑，但马上开修", s: { tech: 4, resilience: 4 } }] },
+            { q: "你更喜欢读哪种书？", options: [{ t: "严谨的科普或方法论", s: { logic: 5, detail: 3 } }, { t: "充满洞察的人生传记或小说", s: { insight: 5, comm: 3 } }] },
+            { q: "对于“大概”、“左右”这类词汇？", options: [{ t: "在分析结论中极度反感出现", s: { detail: 5, logic: 3 } }, { t: "在交流宏观趋势时可以接受", s: { comm: 4, insight: 4 } }] },
+            { q: "你在整理自己的个人文件或手机App时？", options: [{ t: "有严格的文件夹分类系统", s: { detail: 5, logic: 4 } }, { t: "搜索框就是我最好的工具", s: { tech: 4, insight: 3 } }] },
+            { q: "你认为数据分析师的核心价值在于？", options: [{ t: "真实客观地记录发生过什么", s: { detail: 5, tech: 3 } }, { t: "给出预测并告诉业务该怎么做", s: { insight: 5, comm: 4 } }] },
+            { q: "如果你发现模型有一个1%的误差隐患？", options: [{ t: "不修复它今晚肯定睡不着觉", s: { detail: 5, resilience: 4 } }, { t: "评估业务影响，先告知风险再修", s: { insight: 4, comm: 3 } }] },
+            { q: "关于数学？", options: [{ t: "迷恋那些公式背后的完美平衡感", s: { logic: 5, tech: 4 } }, { t: "它是我解决问题的武器库", s: { tech: 5, insight: 3 } }] },
+            { q: "在团队中，你希望扮演？", options: [{ t: "提供核心洞察的“先知”", s: { insight: 5, comm: 4 } }, { t: "确保万无一失的“压舱石”", s: { detail: 5, resilience: 4 } }] },
+            { q: "面对一个新的数据分析工具发布时？", options: [{ t: "马上下载试用，看看有什么新特性", s: { tech: 5, insight: 3 } }, { t: "等别人评测或者公司引入后再学", s: { logic: 4, detail: 2 } }] },
+            { q: "当业务方在项目交付前一晚突然修改需求？", options: [{ t: "深吸一口气，评估影响范围并协商排期", s: { resilience: 5, comm: 4 } }, { t: "虽然很烦，但为了满足业务需求连夜修改", s: { detail: 4, comm: 2 } }] },
+            { q: "你认为一个好的仪表盘（Dashboard）最重要的是？", options: [{ t: "交互流畅，视觉效果惊艳", s: { tech: 4, comm: 4 } }, { t: "指标选取精准，能直接反映业务问题", s: { insight: 5, logic: 3 } }] },
+            { q: "在会议上，你发现别人的数据报告逻辑有漏洞？", options: [{ t: "当场指出，避免错误的结论误导决策", s: { logic: 5, detail: 3 } }, { t: "会后私下沟通，给对方留面子", s: { comm: 5, insight: 3 } }] },
+            { q: "对于“直觉”在数据分析中的作用？", options: [{ t: "直觉往往是经验的积累，可以作为假设的起点", s: { insight: 5, comm: 3 } }, { t: "数据面前没有直觉，一切以统计检验为准", s: { logic: 5, detail: 4 } }] },
+            { q: "你更习惯的工作环境是？", options: [{ t: "安静的角落，戴着耳机沉浸在代码世界", s: { tech: 5, detail: 3 } }, { t: "开放式办公区，随时可以和同事讨论业务", s: { comm: 5, insight: 4 } }] },
+            { q: "如果让你选择一个超能力？", options: [{ t: "瞬间清洗完所有脏数据", s: { detail: 5, tech: 4 } }, { t: "一眼看穿数据背后的商业机会", s: { insight: 5, logic: 3 } }] },
+            { q: "面对复杂的SQL查询，你更倾向于？", options: [{ t: "写一个巨大的嵌套查询，一次搞定", s: { tech: 5, logic: 3 } }, { t: "拆分成多个临时表，步骤清晰易维护", s: { detail: 5, comm: 3 } }] },
+            { q: "你如何看待“数据驱动”这个口号？", options: [{ t: "它是企业数字化转型的必经之路", s: { insight: 4, comm: 4 } }, { t: "很多时候口号大于实际，落地很难", s: { logic: 5, resilience: 3 } }] },
+            { q: "完成一个项目后，你最想做的是？", options: [{ t: "整理文档和代码，归档复盘", s: { detail: 5, logic: 3 } }, { t: "和团队庆祝，分享成功的喜悦", s: { comm: 5, resilience: 3 } }] }
+        ];
+
+        let currentIdx = 0;
+        let scores = { logic: 0, tech: 0, detail: 0, comm: 0, resilience: 0, insight: 0 };
+        let userAnswers = [];
+        let finalUserName = '';
+
+        function goToGate() {
+            finalUserName = document.getElementById('username').value.trim() || '分析师';
+            document.getElementById('home').classList.add('hidden');
+            document.getElementById('gate').classList.remove('hidden');
+        }
+
+        function verifyAccess() {
+            const input = document.getElementById('redemption-code').value;
+            const container = document.getElementById('code-container');
+            const error = document.getElementById('error-msg');
+
+            if (input === CORRECT_CODE) {
+                startQuiz();
+            } else {
+                container.classList.add('shake');
+                error.style.opacity = '1';
+                setTimeout(() => {
+                    container.classList.remove('shake');
+                }, 500);
+            }
+        }
+
+        function startQuiz() {
+            document.getElementById('gate').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('quiz-user-name').innerText = finalUserName;
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIdx];
+            const html = `
+                <div class="question-card active slide-up">
+                    <h2 class="text-3xl md:text-4xl serif mb-12 leading-tight">${q.q}</h2>
+                    <div class="flex flex-col gap-4">
+                        ${q.options.map((opt, i) => `
+                            <button onclick="handleSelect(${i})" class="group text-left p-6 border border-gray-100 hover:border-black transition-all flex justify-between items-center bg-gray-50/30 hover:bg-white">
+                                <span class="text-lg font-light">${opt.t}</span>
+                                <span class="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('questions').innerHTML = html;
+            document.getElementById('progress-text').innerText = (currentIdx + 1).toString().padStart(2, '0');
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
+        }
+
+        function handleSelect(optIdx) {
+            const s = questions[currentIdx].options[optIdx].s;
+            for (let key in s) scores[key] += s[key];
+
+            userAnswers.push({
+                q: questions[currentIdx].q,
+                a: questions[currentIdx].options[optIdx].t
+            });
+
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        async function showResult() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('result').classList.remove('hidden');
+            document.getElementById('result-user-name').innerText = finalUserName;
+
+            const maxDimension = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b);
+            const data = generateResultData(maxDimension[0]);
+
+            // Keep local visual elements
+            document.getElementById('animal-name').innerText = data.animal;
+            document.getElementById('animal-icon').innerText = data.icon;
+            
+            document.getElementById('keywords').innerHTML = data.keywords.map(k => 
+                `<span class="px-4 py-1.5 border border-black text-[10px] uppercase font-bold tracking-widest">${k}</span>`
+            ).join('');
+
+            // AI Analysis Section
+            const analysisContainer = document.getElementById('ai-analysis-container');
+            analysisContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 space-y-4">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+                    <p class="text-sm uppercase tracking-widest text-gray-500 animate-pulse">AI 分析师正在解读你的灵魂...</p>
+                </div>
+            `;
+
+            // Render Chart locally
+            const dims = [
+                { id: 'logic', label: '逻辑建模' }, { id: 'insight', label: '业务洞察' },
+                { id: 'tech', label: '工具技术' }, { id: 'detail', label: '细节严谨' },
+                { id: 'comm', label: '故事讲述' }, { id: 'resilience', label: '抗压韧性' }
+            ];
+
+            document.getElementById('dimensions-grid').innerHTML = dims.map(d => {
+                const val = Math.min(100, (scores[d.id] || 0) * 4);
+                const segs = 10;
+                const act = Math.round((val / 100) * segs);
+                return `
+                    <div class="dimension-card p-8">
+                        <div class="flex justify-between items-end mb-6">
+                            <h5 class="text-[10px] uppercase tracking-[0.3em] font-black">${d.label}</h5>
+                            <span class="text-xl serif text-gold font-bold">${val}%</span>
+                        </div>
+                        <div class="flex gap-1 mb-6">
+                            ${Array.from({length: segs}).map((_, i) => `<div class="chart-segment ${i < act ? 'active' : ''}"></div>`).join('')}
+                        </div>
+                        <p class="text-xs text-gray-400 leading-relaxed italic">${getDimText(d.id, val)}</p>
+                    </div>
+                `;
+            }).join('');
+            
+            window.scrollTo(0,0);
+
+            // Call Backend API
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: finalUserName,
+                        scores: scores,
+                        answers: userAnswers
+                    })
+                });
+                
+                if (response.ok) {
+                    const resData = await response.json();
+                    analysisContainer.innerHTML = resData.result;
+                } else {
+                    const errData = await response.json();
+                    let msg = "AI 连接失败，请稍后再试。";
+                    if (response.status === 402) {
+                        msg = "API 余额不足 (Insufficient Balance)，请检查 DeepSeek 账户。";
+                    } else if (errData.details) {
+                         try {
+                            const detailJson = JSON.parse(errData.details);
+                            if (detailJson.error && detailJson.error.message) {
+                                msg = `API 错误: ${detailJson.error.message}`;
+                            }
+                         } catch (e) {}
+                    }
+                    analysisContainer.innerHTML = `<div class="p-6 bg-red-50 text-red-600 rounded text-center font-bold">${msg}</div>`;
+                }
+            } catch (e) {
+                console.error(e);
+                analysisContainer.innerHTML = `<div class="p-6 bg-red-50 text-red-600 rounded text-center font-bold">分析服务暂时不可用 (Network Error)。</div>`;
+            }
+        }
+
+        function generateResultData(top) {
+            const map = {
+                logic: { animal: "深海章鱼", icon: "🐙", keywords: ["Matrix", "Logic"], summary: `你在数据中展现了极强的系统思维。即便在混沌的业务场景中，${finalUserName}总能迅速建立起结构化的逻辑模型。`, strength: "能将混沌的业务转化为清晰的数学逻辑。" },
+                insight: { animal: "雪地猎鹰", icon: "🦅", keywords: ["Vision", "Sharp"], summary: `${finalUserName}对数字背后的意义有着近乎直觉的敏感。就像猎鹰俯瞰大地，你总能捕捉那一抹灵光。`, strength: "一眼看穿报表背后隐藏的市场商机。" },
+                tech: { animal: "机械工蜂", icon: "🐝", keywords: ["Efficiency", "Auto"], summary: `效率是${finalUserName}的信仰。你擅长用代码构建高效的自动化体系，将重复劳动化为乌有。`, strength: "能将复杂的分析流程全自动化，实现效率极致。" },
+                detail: { animal: "金睛猫头鹰", icon: "🦉", keywords: ["Purity", "Focus"], summary: `在你的眼中，0.1%的误差也是不可接受的。${finalUserName}是团队产出最后一道稳固的屏障。`, strength: "在百万行数据中精准捕捉到那一行致命的格式错误。" },
+                comm: { animal: "深海海豚", icon: "🐬", keywords: ["Story", "Bridge"], summary: `${finalUserName}擅长在冰冷的数字与温热的决策之间架起桥梁。你不仅在分析，你更在谱写逻辑之诗。`, strength: "让完全不懂技术的老板听懂最复杂的回归分析。" },
+                resilience: { animal: "荒原狼", icon: "🐺", keywords: ["Grit", "Will"], summary: `面对脏数据和反复的需求变更，${finalUserName}展现了荒原狼般的耐受力。你享受解决难题后的纯粹成就感。`, strength: "在深夜排查Bug后依然能保持思考的清醒。" }
+            };
+            return map[top] || map.logic;
+        }
+
+        function getDimText(id, val) {
+            return val > 80 ? "卓越：具备行业顶尖潜质。" : (val > 50 ? "优秀：已具备专业素养。" : "尚可：有较大成长空间。");
+        }
+
+        function toggleContact() {
+            const modal = document.getElementById('contact-modal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                // 强制重绘以触发 transition
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            } else {
+                modal.classList.add('opacity-0');
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+    </script>
+</body>
+</html>
