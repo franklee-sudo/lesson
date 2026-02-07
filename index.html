@@ -219,8 +219,14 @@
                         <div class="absolute -bottom-10 -right-10 text-[120px] text-gray-50 serif font-bold select-none">2026</div>
                     </div>
                 </div>
-                <div class="flex flex-col justify-center" id="ai-analysis-container">
-                    <!-- AI Analysis Result will be injected here -->
+                <div class="flex flex-col justify-center">
+                    <div class="text-xs uppercase tracking-widest text-gray-400 mb-4 font-bold">Archetype Summary</div>
+                    <h3 class="text-3xl serif mb-6" id="summary-title">职业人格解析</h3>
+                    <p id="summary-text" class="text-gray-600 leading-relaxed text-lg mb-8"></p>
+                    <div class="bg-black text-white p-8">
+                        <div class="text-xs uppercase tracking-[0.2em] mb-4 text-gray-400">主要优势 / Dominant Advantage</div>
+                        <div id="main-strength" class="text-xl italic font-serif"></div>
+                    </div>
                 </div>
             </div>
 
@@ -360,7 +366,7 @@
             }
         }
 
-        async function showResult() {
+        function showResult() {
             document.getElementById('quiz-container').classList.add('hidden');
             document.getElementById('result').classList.remove('hidden');
             document.getElementById('result-user-name').innerText = finalUserName;
@@ -371,19 +377,13 @@
             // Keep local visual elements
             document.getElementById('animal-name').innerText = data.animal;
             document.getElementById('animal-icon').innerText = data.icon;
+            document.getElementById('summary-title').innerText = `${finalUserName}的职业人格解析`;
+            document.getElementById('summary-text').innerText = data.summary;
+            document.getElementById('main-strength').innerText = data.strength;
             
             document.getElementById('keywords').innerHTML = data.keywords.map(k => 
                 `<span class="px-4 py-1.5 border border-black text-[10px] uppercase font-bold tracking-widest">${k}</span>`
             ).join('');
-
-            // AI Analysis Section
-            const analysisContainer = document.getElementById('ai-analysis-container');
-            analysisContainer.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-12 space-y-4">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-                    <p class="text-sm uppercase tracking-widest text-gray-500 animate-pulse">AI 分析师正在解读你的灵魂...</p>
-                </div>
-            `;
 
             // Render Chart locally
             const dims = [
@@ -411,41 +411,6 @@
             }).join('');
             
             window.scrollTo(0,0);
-
-            // Call Backend API
-            try {
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: finalUserName,
-                        scores: scores,
-                        answers: userAnswers
-                    })
-                });
-                
-                if (response.ok) {
-                    const resData = await response.json();
-                    analysisContainer.innerHTML = resData.result;
-                } else {
-                    const errData = await response.json();
-                    let msg = "AI 连接失败，请稍后再试。";
-                    if (response.status === 402) {
-                        msg = "API 余额不足 (Insufficient Balance)，请检查 DeepSeek 账户。";
-                    } else if (errData.details) {
-                         try {
-                            const detailJson = JSON.parse(errData.details);
-                            if (detailJson.error && detailJson.error.message) {
-                                msg = `API 错误: ${detailJson.error.message}`;
-                            }
-                         } catch (e) {}
-                    }
-                    analysisContainer.innerHTML = `<div class="p-6 bg-red-50 text-red-600 rounded text-center font-bold">${msg}</div>`;
-                }
-            } catch (e) {
-                console.error(e);
-                analysisContainer.innerHTML = `<div class="p-6 bg-red-50 text-red-600 rounded text-center font-bold">分析服务暂时不可用 (Network Error)。</div>`;
-            }
         }
 
         function generateResultData(top) {
